@@ -1,5 +1,5 @@
 # MultiPycat
-Multiple reverse shell connections handler written in python3.
+Multiple reverse shell connections handler written in Python3.
 
 # Features
 * Simultaneously accept multiple reverse shell connections from different devices
