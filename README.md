@@ -1,6 +1,8 @@
 # MultiPycat
 Multiple reverse shell connections handler written in Python3.
 
+<img src="https://github.com/tomelic/MultiPycat/blob/master/example.png" width="500" height="300">
+
 # Features
 * Simultaneously accept multiple reverse shell connections from different devices
 * Interacting with connections and going back and forth to the main interface
