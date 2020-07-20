@@ -127,14 +127,33 @@ def input_callback(keyboard_input):
         except ValueError:
             print("Unrecognized session")
 
-    # dynamically add server local file names to serve
-    elif keyboard_input.startswith("f"):
+    # list currently serving files
+    elif keyboard_input.startswith("fl") or keyboard_input.startswith("filel"):
+        if files_to_serve:
+            print("Serving: {}".format(files_to_serve))
+        else:
+            print("No files are served")
+
+    # dynamically add server local file names to files_to_serve
+    elif keyboard_input.startswith("fa") or keyboard_input.startswith("filea"):
         try:
             selection = keyboard_input.split(' ')[-1]
             print('Adding "{}" to files_to_serve list'.format(selection))
             files_to_serve.append(selection)
         except ValueError:
             print("Couldn't add file to list")
+
+    # dynamically remove server local file names from files_to_serve
+    elif keyboard_input.startswith("fd") or keyboard_input.startswith("filed"):
+        try:
+            selection = keyboard_input.split(' ')[-1]
+            if selection in files_to_serve:
+                print('Removing "{}" from files_to_serve list'.format(selection))
+                files_to_serve.remove(selection)
+            else:
+                print("File not in files_to_serve list")
+        except ValueError:
+            print("Couldn't remove file from list")
 
     # delete connection
     elif keyboard_input.startswith("d"):
@@ -173,7 +192,9 @@ def input_callback(keyboard_input):
         print("    select:          Interact with session                 select 0")
         print("    delete:          Delete session                        delete 0")
         print("    background:      Return to this interface")
-        print("    file:            Add local filename to serve           file ServeMe.png")
+        print("    filelist:        List files we serve over HTTP")
+        print("    fileadd:         Add local filename to serve           fileadd ServeMe.png")
+        print("    filedelete:      Remove file from serving list         filedelete ServerMe.png")
         print("    clear:           Clear terminal")
         print("    quit:            Quit this interface")
         print()
