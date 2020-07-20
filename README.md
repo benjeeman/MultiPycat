@@ -6,6 +6,8 @@ Multiple reverse shell connections handler written in Python3.
 # Features
 * Simultaneously accept multiple reverse shell connections from different devices
 * Interacting with connections and going back and forth to the main interface
+* Serve files over HTTP through the same port listening for reverse shell connections
+* Serve specific files according to user-inputted whitelist
 * Simplistically written in Python3
 * No external dependencies or libraries
 
