@@ -1,9 +1,20 @@
 from os import system, name, _exit
-from sys import argv
 from datetime import datetime
+import argparse
 
 from threading import Thread
 import socket
+
+# cli args
+parser = argparse.ArgumentParser(description='help')
+parser.add_argument('-p', dest='port', type=int, help='port to listen on, defautls to 80')
+parser.add_argument('-f', dest='files', type=str, help='server specific files, separated by commas')
+args = parser.parse_args()
+
+# files to server for HTTP requests
+files_to_serve = []
+if args.files:
+    files_to_serve = args.files.split(',')
 
 # new connections store
 connections = []
@@ -16,9 +27,9 @@ class MultiHandler(object):
         self.port = 80 # Default port if none chosen
         self.socket = None
         
-        # change port if specified in argv[1]
-        if len(argv) > 1:
-            port = int(argv[1])
+        # change port if specified in arg
+        if args.port:
+            self.port = args.port
 
         banner(self.host, self.port)
 
@@ -30,19 +41,49 @@ class MultiHandler(object):
             self.socket.bind((self.host, self.port))
         except:
             pass
-        self.socket.listen(5)
+        self.socket.listen(10)
         
         while True:
+            conn, address = self.socket.accept()
+            conn.setblocking(1)
             try:
-                conn, address = self.socket.accept()
-                conn.setblocking(1)
                 client_data = conn.recv(1024).decode()
-                address = address + (client_data, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            except:
+                pass
+            conn_type = self.identify_conn_type(client_data)
+            
+            # Reverse shells
+            if conn_type == "TCP":
+                address = address + (conn_type, client_data, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
                 connections.append(conn)
                 addresses.append(address)
                 print('\n{} New connection: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
-            except:
-                print(" Ctrl+C on linux is prevented to block accidents, use back or quit")
+            
+            # HTTP file serving
+            elif conn_type == "HTTP":
+                print('\n{} New HTTP request: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
+                
+                # only serve if user specified file names
+                if files_to_serve:
+                    try:
+                        file_to_download = client_data.split(' ')[1].replace('/', '')
+                        if file_to_download in files_to_serve:
+                            print("Serving", file_to_download)
+                            with open(file_to_download, 'rb') as file_to_send:
+                                for data in file_to_send:
+                                    conn.sendall(data)
+                            print("File was served")
+                    except:
+                        print("File serving error")
+
+    # Fingerprint connection protocol based on connected client's first input
+    def identify_conn_type(self, client_data):
+        # currently returns TCP for anything not supported
+        # intentionally short on HTTP method support
+        conn_type = "TCP"                               
+        if client_data.startswith(('GET', 'POST')):
+            conn_type = "HTTP"
+        return conn_type
 
 # User input as a separate thread to avoid IO blocking
 class KeyboardThread(Thread):
@@ -86,6 +127,15 @@ def input_callback(keyboard_input):
         except ValueError:
             print("Unrecognized session")
 
+    # dynamically add server local file names to serve
+    elif keyboard_input.startswith("f"):
+        try:
+            selection = keyboard_input.split(' ')[-1]
+            print('Adding "{}" to files_to_serve list'.format(selection))
+            files_to_serve.append(selection)
+        except ValueError:
+            print("Couldn't add file to list")
+
     # delete connection
     elif keyboard_input.startswith("d"):
         try:
@@ -116,12 +166,17 @@ def input_callback(keyboard_input):
     
     # help
     elif keyboard_input.startswith("h"):
-        print("\n list:                List existing sessions")
-        print(" select:              Interact with session")
-        print(" background:          Return to this interface")
-        print(" delete:              Delete session")
-        print(" clear:               Clear terminal")
-        print(" quit:                Quit this interface\n")
+        print()
+        print("  command             description                         example")
+        print("|---------------|-------------------------------------|----------------------------|")
+        print("    list:            List existing sessions")
+        print("    select:          Interact with session                 select 0")
+        print("    delete:          Delete session                        delete 0")
+        print("    background:      Return to this interface")
+        print("    file:            Add local filename to serve           file ServeMe.png")
+        print("    clear:           Clear terminal")
+        print("    quit:            Quit this interface")
+        print()
         
 # read tcp
 def tcp_rx():
