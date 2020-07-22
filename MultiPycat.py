@@ -24,12 +24,12 @@ addresses = []
 class MultiHandler(object):
     def __init__(self):
         self.host = '0.0.0.0'
-        self.port = 80 # Default port if none chosen
+        self.port = 4443 # Default port if none chosen
         self.socket = None
         
         # change port if specified in arg
         if args.port:
-            self.port = args.port
+            self.port = int(args.port)
 
         banner(self.host, self.port)
 
