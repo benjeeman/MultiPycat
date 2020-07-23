@@ -44,38 +44,38 @@ class MultiHandler(object):
         self.socket.listen(10)
         
         while True:
-            conn, address = self.socket.accept()
-            conn.setblocking(1)
             try:
+                conn, address = self.socket.accept()
+                conn.setblocking(1)
                 client_data = conn.recv(1024).decode()
+                conn_type = self.identify_conn_type(client_data)
+            
+                # Reverse shells
+                if conn_type == "TCP":
+                    address = address + (conn_type, client_data, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    connections.append(conn)
+                    addresses.append(address)
+                    print('\n{} New connection: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
+                
+                # HTTP file serving
+                elif conn_type == "HTTP":
+                    print('\n{} New HTTP request: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
+                    
+                    # only serve if user specified file names
+                    if files_to_serve:
+                        try:
+                            file_to_download = client_data.split(' ')[1].replace('/', '')
+                            if file_to_download in files_to_serve:
+                                print("Serving", file_to_download)
+                                with open(file_to_download, 'rb') as file_to_send:
+                                    for data in file_to_send:
+                                        conn.sendall(data)
+                                conn.close()
+                                print("File was served")
+                        except:
+                            print("File serving error")
             except:
                 pass
-            conn_type = self.identify_conn_type(client_data)
-            
-            # Reverse shells
-            if conn_type == "TCP":
-                address = address + (conn_type, client_data, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                connections.append(conn)
-                addresses.append(address)
-                print('\n{} New connection: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
-            
-            # HTTP file serving
-            elif conn_type == "HTTP":
-                print('\n{} New HTTP request: {} ({})'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S"), address[-1], address[0]))
-                
-                # only serve if user specified file names
-                if files_to_serve:
-                    try:
-                        file_to_download = client_data.split(' ')[1].replace('/', '')
-                        if file_to_download in files_to_serve:
-                            print("Serving", file_to_download)
-                            with open(file_to_download, 'rb') as file_to_send:
-                                for data in file_to_send:
-                                    conn.sendall(data)
-                            conn.close()
-                            print("File was served")
-                    except:
-                        print("File serving error")
 
     # Fingerprint connection protocol based on connected client's first input
     def identify_conn_type(self, client_data):
