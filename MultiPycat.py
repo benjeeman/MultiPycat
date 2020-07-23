@@ -79,8 +79,6 @@ class MultiHandler(object):
 
     # Fingerprint connection protocol based on connected client's first input
     def identify_conn_type(self, client_data):
-        # currently returns TCP for anything not supported
-        # intentionally short on HTTP method support
         conn_type = "TCP"                               
         if client_data.startswith(('GET', 'POST')):
             conn_type = "HTTP"
