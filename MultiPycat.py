@@ -72,6 +72,7 @@ class MultiHandler(object):
                             with open(file_to_download, 'rb') as file_to_send:
                                 for data in file_to_send:
                                     conn.sendall(data)
+                            conn.close()
                             print("File was served")
                     except:
                         print("File serving error")
@@ -83,6 +84,8 @@ class MultiHandler(object):
         conn_type = "TCP"                               
         if client_data.startswith(('GET', 'POST')):
             conn_type = "HTTP"
+        elif client_data.startswith(('HEAD', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH')):
+            conn_type = "Unsupported protocol tried to connect"
         return conn_type
 
 # User input as a separate thread to avoid IO blocking
